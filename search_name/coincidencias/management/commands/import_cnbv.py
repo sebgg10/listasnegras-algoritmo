@@ -5,7 +5,7 @@ from datetime import date
 
 from django.core.management.base import BaseCommand
 
-from coincidencias.models import Oficio, PersonaCNBV
+from coincidencias.models import NameRecord, Oficio, PersonaCNBV
 
 NS = "http://www.cnbv.gob.mx"
 
@@ -40,6 +40,8 @@ class Command(BaseCommand):
         if options["reset"]:
             count, _ = Oficio.objects.all().delete()
             self.stdout.write(self.style.WARNING(f"Oficios eliminados: {count}"))
+            nr_count, _ = NameRecord.objects.filter(origen="SolicitudPartes").delete()
+            self.stdout.write(self.style.WARNING(f"NameRecords eliminados: {nr_count}"))
 
         carpeta = options["carpeta"]
         pattern = os.path.join(carpeta, "**", "4-*.xml")
@@ -125,9 +127,11 @@ class Command(BaseCommand):
                         )
                         personas_creadas += 1
 
+                partes_creadas = self._importar_partes(root, folio)
                 importados += 1
                 self.stdout.write(
-                    f"  Folio {folio} ({fecha_str}): {personas_creadas} persona(s)"
+                    f"  Folio {folio} ({fecha_str}): "
+                    f"{personas_creadas} PersonaCNBV, {partes_creadas} NameRecord"
                 )
 
             except Exception as exc:
@@ -139,6 +143,27 @@ class Command(BaseCommand):
                 f"\nResumen — Importados: {importados} | Omitidos (ya existían): {omitidos} | Errores: {errores}"
             )
         )
-        self.stdout.write(
-            self.style.SUCCESS(f"Total de oficios en BD: {Oficio.objects.count()}")
-        )
+        self.stdout.write(self.style.SUCCESS(f"Total de oficios en BD: {Oficio.objects.count()}"))
+        self.stdout.write(self.style.SUCCESS(f"Total de NameRecords en BD: {NameRecord.objects.count()}"))
+
+    def _importar_partes(self, root, folio):
+        creadas = 0
+        folio_str = str(folio)
+        for parte_el in root.findall(_tag("SolicitudPartes")):
+            nombre  = _text(parte_el, "Nombre")
+            paterno = _text(parte_el, "Paterno")
+            materno = _text(parte_el, "Materno")
+            rfc     = _text(parte_el, "Rfc")
+            if not nombre and not paterno:
+                continue
+            _, created = NameRecord.objects.get_or_create(
+                origen="SolicitudPartes",
+                folio_ref=folio_str,
+                nombre=nombre,
+                paterno=paterno,
+                materno=materno,
+                defaults={"rfc": rfc},
+            )
+            if created:
+                creadas += 1
+        return creadas

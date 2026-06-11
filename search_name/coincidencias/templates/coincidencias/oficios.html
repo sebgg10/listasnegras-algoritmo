@@ -1,87 +1,136 @@
-{% load static %}
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Oficios CNBV — Verificación PLD-FT</title>
-    <link rel="stylesheet" href="{% static 'coincidencias/styles.css' %}" />
-  </head>
-  <body>
-    <main class="page-wrap">
+{% extends "coincidencias/base.html" %}
 
-      <section class="card hero">
-        <p class="badge">CNBV / PLD-FT</p>
-        <h1>Oficios CNBV importados</h1>
-        <p>
-          Lista de oficios de la Unidad de Inteligencia Financiera cargados en el sistema.
-          Selecciona un oficio para comparar sus personas contra la base de clientes.
-        </p>
-        <nav class="nav-links">
-          <a href="{% url 'search_names' %}" class="btn-secondary">← Búsqueda manual</a>
-        </nav>
-      </section>
+{% block title %}Oficios CNBV &mdash; Buscador PLD-FT{% endblock %}
 
-      {% if not oficios %}
-        <section class="card">
-          <h2>No hay oficios importados</h2>
-          <p>
-            Ejecuta el siguiente comando para importar los XMLs de la carpeta
-            <code>listasnegras/</code>:
-          </p>
-          <pre class="code-block">python manage.py import_cnbv ../listasnegras/</pre>
-        </section>
-      {% else %}
-        <section class="card">
-          <p class="hint">
-            Total de oficios: <strong>{{ total_oficios }}</strong>
-          </p>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Folio</th>
-                  <th>Fecha</th>
-                  <th>Referencia</th>
-                  <th>Área</th>
-                  <th>Plazo</th>
-                  <th>Personas</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for oficio in oficios %}
-                  <tr>
-                    <td><strong>{{ oficio.folio }}</strong></td>
-                    <td>{{ oficio.fecha_publicacion }}</td>
-                    <td>
-                      {{ oficio.referencia }}
-                      {% if oficio.referencia1 %}
-                        <br /><small>{{ oficio.referencia1 }}</small>
-                      {% endif %}
-                    </td>
-                    <td>{{ oficio.area_descripcion }}</td>
-                    <td>
-                      <span class="badge-plazo {% if oficio.dias_plazo <= 1 %}plazo-urgente{% else %}plazo-normal{% endif %}">
-                        {{ oficio.dias_plazo }} día{{ oficio.dias_plazo|pluralize }}
-                      </span>
-                    </td>
-                    <td>
-                      <span class="count-badge">{{ oficio.personas.count }}</span>
-                    </td>
-                    <td>
-                      <a href="{% url 'comparar_oficio' oficio.folio %}" class="btn-comparar">
-                        Comparar
-                      </a>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+{% block content %}
+  <header class="page-head">
+    <p class="eyebrow">Oficios CNBV / PLD-FT</p>
+    <h1>Oficios importados de la autoridad</h1>
+    <p class="lead">
+      Oficios de la Unidad de Inteligencia Financiera cargados en el sistema.
+      Selecciona uno para comparar sus personas contra la base de clientes.
+    </p>
+  </header>
+
+  {% if not oficios %}
+    <section class="panel empty-state">
+      <h2>No hay oficios importados</h2>
+      <p>Ejecuta el siguiente comando para importar los XMLs de la carpeta <code>listasnegras/</code>:</p>
+      <pre class="code-block">python manage.py import_cnbv ../listasnegras/</pre>
+    </section>
+  {% else %}
+    <div class="filters">
+      <div class="filters-group">
+        <span class="filters-lbl">A&ntilde;o</span>
+        <select id="filter-year" class="select">
+          <option value="Todos">Todos</option>
+        </select>
+      </div>
+      <div class="filters-group">
+        <span class="filters-lbl">&Aacute;rea</span>
+        <select id="filter-area" class="select">
+          <option value="Todas">Todas</option>
+        </select>
+      </div>
+      <span class="filters-count">Mostrando <strong class="mono" id="oficio-count">{{ total_oficios }}</strong> oficios</span>
+    </div>
+
+    <div class="oficio-grid" id="oficio-grid">
+      {% for oficio in oficios %}
+        <article
+          class="oficio-card {% if oficio.dias_plazo <= 1 %}is-urgent{% endif %}"
+          data-anio="{{ oficio.fecha_publicacion|date:'Y' }}"
+          data-area="{{ oficio.area_descripcion }}"
+        >
+          <span class="oficio-accent"></span>
+          <div class="oficio-body">
+            <div class="oficio-top">
+              <div>
+                <span class="oficio-cap">Folio</span>
+                <span class="oficio-folio">{{ oficio.folio }}</span>
+              </div>
+              <span class="plazo {% if oficio.dias_plazo <= 1 %}plazo-urgente{% else %}plazo-normal{% endif %}">
+                <span class="plazo-dot"></span>Plazo: {{ oficio.dias_plazo }} d&iacute;a{{ oficio.dias_plazo|pluralize }}
+              </span>
+            </div>
+
+            <dl class="oficio-meta">
+              <div class="meta-row">
+                <dt>Fecha</dt>
+                <dd>{{ oficio.fecha_publicacion }}</dd>
+              </div>
+              <div class="meta-row">
+                <dt>Referencia</dt>
+                <dd class="mono">
+                  {{ oficio.referencia }}
+                  {% if oficio.referencia1 %}<span class="meta-sub">{{ oficio.referencia1 }}</span>{% endif %}
+                </dd>
+              </div>
+              <div class="meta-row">
+                <dt>&Aacute;rea</dt>
+                <dd>{{ oficio.area_descripcion }}</dd>
+              </div>
+            </dl>
+
+            <div class="oficio-foot">
+              <span class="personas">
+                <span class="personas-count">{{ oficio.personas.count }}</span> personas
+              </span>
+              <a href="{% url 'comparar_oficio' oficio.folio %}" class="btn-comparar">Comparar &rarr;</a>
+            </div>
           </div>
-        </section>
-      {% endif %}
+        </article>
+      {% endfor %}
+    </div>
 
-    </main>
-  </body>
-</html>
+    <p class="no-results" id="no-results" hidden>Ning&uacute;n oficio coincide con los filtros seleccionados.</p>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var ySel = document.getElementById('filter-year');
+    var aSel = document.getElementById('filter-area');
+    var cards = Array.prototype.slice.call(document.querySelectorAll('[data-anio]'));
+    var countEl = document.getElementById('oficio-count');
+    var noRes = document.getElementById('no-results');
+    if (!ySel || !aSel) return;
+
+    function fill(sel, values) {
+      values.sort().forEach(function (v) {
+        if (!v) return;
+        var o = document.createElement('option');
+        o.value = v; o.textContent = v;
+        sel.appendChild(o);
+      });
+    }
+    var years = [], areas = [];
+    cards.forEach(function (c) {
+      var y = c.getAttribute('data-anio'), a = c.getAttribute('data-area');
+      if (y && years.indexOf(y) === -1) years.push(y);
+      if (a && areas.indexOf(a) === -1) areas.push(a);
+    });
+    years.sort(function (m, n) { return n - m; });
+    years.forEach(function (v) {
+      var o = document.createElement('option'); o.value = v; o.textContent = v; ySel.appendChild(o);
+    });
+    fill(aSel, areas);
+
+    function apply() {
+      var fy = ySel.value, fa = aSel.value, n = 0;
+      cards.forEach(function (c) {
+        var okY = fy === 'Todos' || c.getAttribute('data-anio') === fy;
+        var okA = fa === 'Todas' || c.getAttribute('data-area') === fa;
+        var show = okY && okA;
+        c.style.display = show ? '' : 'none';
+        if (show) n++;
+      });
+      if (countEl) countEl.textContent = n;
+      if (noRes) noRes.hidden = n !== 0;
+    }
+    ySel.addEventListener('change', apply);
+    aSel.addEventListener('change', apply);
+  })();
+</script>
+{% endblock %}

@@ -1,142 +1,155 @@
-{% load static %}
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Comparación — Folio {{ oficio.folio }}</title>
-    <link rel="stylesheet" href="{% static 'coincidencias/styles.css' %}" />
-  </head>
-  <body>
-    <main class="page-wrap">
+{% extends "coincidencias/base.html" %}
 
-      <!-- Encabezado del oficio -->
-      <section class="card hero">
-        <p class="badge">Oficio CNBV — PLD-FT</p>
-        <h1>Folio {{ oficio.folio }}</h1>
-        <div class="oficio-meta">
-          <span><strong>Número:</strong> {{ oficio.numero_oficio }}</span>
-          <span><strong>Expediente:</strong> {{ oficio.numero_expediente }}</span>
-          <span><strong>Fecha:</strong> {{ oficio.fecha_publicacion }}</span>
-          <span><strong>Plazo:</strong>
-            <span class="badge-plazo {% if oficio.dias_plazo <= 1 %}plazo-urgente{% else %}plazo-normal{% endif %}">
-              {{ oficio.dias_plazo }} día{{ oficio.dias_plazo|pluralize }}
+{% block title %}Comparaci&oacute;n Folio {{ oficio.folio }} &mdash; Buscador PLD-FT{% endblock %}
+
+{% block content %}
+  <a href="{% url 'lista_oficios' %}" class="back-link">&larr; Oficios CNBV</a>
+
+  <section class="panel oficio-header">
+    <div class="oficio-header-top">
+      <div>
+        <p class="eyebrow eyebrow-orange">Oficio CNBV &middot; PLD-FT</p>
+        <h1>Folio <span class="mono">{{ oficio.folio }}</span></h1>
+      </div>
+      <span class="plazo {% if oficio.dias_plazo <= 1 %}plazo-urgente{% else %}plazo-normal{% endif %} plazo-lg">
+        <span class="plazo-dot"></span>Plazo: {{ oficio.dias_plazo }} d&iacute;a{{ oficio.dias_plazo|pluralize }}
+      </span>
+    </div>
+    <dl class="header-meta">
+      <div><dt>N&uacute;mero</dt><dd class="mono">{{ oficio.numero_oficio }}</dd></div>
+      <div><dt>Expediente</dt><dd class="mono">{{ oficio.numero_expediente }}</dd></div>
+      <div><dt>Fecha</dt><dd>{{ oficio.fecha_publicacion }}</dd></div>
+      <div><dt>Referencia</dt><dd>{{ oficio.referencia }}</dd></div>
+      <div><dt>Autoridad</dt><dd>{{ oficio.autoridad_nombre }}</dd></div>
+    </dl>
+  </section>
+
+  <div class="summary-grid">
+    <div class="summary-tile">
+      <span class="summary-icon ic-people"><span class="ic-circle"></span></span>
+      <span class="summary-text">
+        <span class="summary-num">{{ total_personas_cnbv }}</span>
+        <span class="summary-lbl">Personas en el oficio</span>
+      </span>
+    </div>
+    <div class="summary-tile">
+      <span class="summary-icon ic-db"><span class="ic-square"></span></span>
+      <span class="summary-text">
+        <span class="summary-num">{{ total_clientes }}</span>
+        <span class="summary-lbl">Clientes en la base</span>
+      </span>
+    </div>
+    <div class="summary-tile {% if total_alertas > 0 %}is-alert{% endif %}">
+      <span class="summary-icon ic-alert">!</span>
+      <span class="summary-text">
+        <span class="summary-num">{{ total_alertas }}</span>
+        <span class="summary-lbl">Personas con coincidencias</span>
+      </span>
+    </div>
+  </div>
+
+  <section class="panel umbral">
+    <form method="get" class="umbral-form">
+      <div class="umbral-main">
+        <div class="umbral-head">
+          <label for="id_min_score">Umbral de coincidencia m&iacute;nima</label>
+          <span class="umbral-val" id="umbral-val">{{ min_score }}%</span>
+        </div>
+        <input
+          type="range" id="id_min_score" name="min_score"
+          min="0" max="100" value="{{ min_score }}"
+          oninput="document.getElementById('umbral-val').textContent = this.value + '%';"
+        />
+        <div class="umbral-scale"><span>0</span><span>50</span><span>100</span></div>
+      </div>
+      <div class="umbral-side">
+        {% include "coincidencias/_legend.html" %}
+        <button type="submit" class="btn-primary btn-sm">Recalcular</button>
+      </div>
+    </form>
+  </section>
+
+  <div class="persona-list">
+    {% for resultado in resultados %}
+      <details class="persona {% if resultado.tiene_coincidencias %}is-alert{% endif %}" {% if resultado.tiene_coincidencias %}open{% endif %}>
+        <summary class="persona-summary">
+          <span class="chev" aria-hidden="true">&#9656;</span>
+          <span class="tipo {% if resultado.persona.tipo_persona == 'Fisica' %}tipo-fisica{% else %}tipo-moral{% endif %}">{{ resultado.persona.tipo_persona }}</span>
+          <span class="persona-id">
+            <span class="persona-name">{{ resultado.persona.search_full_name }}</span>
+            <span class="persona-sub">
+              {% if resultado.persona.rfc %}RFC: {{ resultado.persona.rfc }}{% endif %}
+              {% if resultado.persona.rfc and resultado.persona.caracter %} &middot; {% endif %}
+              {% if resultado.persona.caracter %}{{ resultado.persona.caracter }}{% endif %}
+              {% if resultado.persona.complementarios %} &middot; {{ resultado.persona.complementarios }}{% endif %}
             </span>
           </span>
-          <span><strong>Referencia:</strong> {{ oficio.referencia }}</span>
-          <span><strong>Autoridad:</strong> {{ oficio.autoridad_nombre }}</span>
-        </div>
-        <nav class="nav-links" style="margin-top:1rem;">
-          <a href="{% url 'lista_oficios' %}" class="btn-secondary">← Regresar a oficios</a>
-        </nav>
-      </section>
+          <span class="status {% if resultado.tiene_coincidencias %}status-alert{% else %}status-none{% endif %}">
+            {% if resultado.tiene_coincidencias %}{{ resultado.matches|length }} coincidencia{{ resultado.matches|length|pluralize }}{% else %}Sin coincidencias{% endif %}
+          </span>
+        </summary>
 
-      <!-- Resumen de la comparación -->
-      <section class="card">
-        <div class="resumen-grid">
-          <div class="resumen-item">
-            <span class="resumen-num">{{ total_personas_cnbv }}</span>
-            <span class="resumen-lbl">Personas CNBV</span>
-          </div>
-          <div class="resumen-item">
-            <span class="resumen-num">{{ total_clientes }}</span>
-            <span class="resumen-lbl">Clientes en BD</span>
-          </div>
-          <div class="resumen-item {% if total_alertas > 0 %}resumen-alerta{% endif %}">
-            <span class="resumen-num">{{ total_alertas }}</span>
-            <span class="resumen-lbl">Con coincidencias</span>
-          </div>
-        </div>
-
-        <!-- Control del umbral -->
-        <form method="get" class="umbral-form">
-          <label for="id_min_score">Coincidencia mínima (%)</label>
-          <input
-            type="number"
-            id="id_min_score"
-            name="min_score"
-            min="0"
-            max="100"
-            value="{{ min_score }}"
-            style="width:90px;"
-          />
-          <button type="submit">Recalcular</button>
-        </form>
-      </section>
-
-      <!-- Resultados por persona CNBV -->
-      {% for resultado in resultados %}
-        <section class="card {% if resultado.tiene_coincidencias %}card-alerta{% endif %}">
-          <div class="persona-header">
-            <div>
-              <span class="tipo-badge {% if resultado.persona.tipo_persona == 'Fisica' %}tipo-fisica{% else %}tipo-moral{% endif %}">
-                {{ resultado.persona.tipo_persona }}
-              </span>
-              <strong class="persona-nombre">{{ resultado.persona.search_full_name }}</strong>
-              {% if resultado.persona.rfc %}
-                <small> — RFC: {{ resultado.persona.rfc }}</small>
-              {% endif %}
-            </div>
-            <div class="persona-meta">
-              {% if resultado.persona.caracter %}
-                <span class="caracter-badge">{{ resultado.persona.caracter }}</span>
-              {% endif %}
-              {% if resultado.persona.complementarios %}
-                <small>{{ resultado.persona.complementarios }}</small>
-              {% endif %}
-            </div>
-          </div>
-
-          {% if resultado.tiene_coincidencias %}
-            <div class="table-wrap" style="margin-top:0.75rem;">
-              <table>
+        {% if resultado.tiene_coincidencias %}
+          <div class="persona-body">
+            <div class="table-scroll mini">
+              <table class="data-table data-table-sm">
                 <thead>
                   <tr>
-                    <th>Cliente en BD</th>
-                    <th>Coincidencia</th>
+                    <th class="col-name">Cliente en la base</th>
+                    <th class="col-score">Coincidencia</th>
                     <th>Motivo</th>
-                    <th>Detalle métricas</th>
+                    <th>M&eacute;tricas</th>
                   </tr>
                 </thead>
                 <tbody>
                   {% for match in resultado.matches %}
                     <tr class="{% if match.score >= 80 %}row-alto{% elif match.score >= 60 %}row-medio{% else %}row-bajo{% endif %}">
-                      <td>
-                        <strong>{{ match.name }}</strong>
-                        {% if match.rfc %}<br /><small>RFC: {{ match.rfc }}</small>{% endif %}
-                        {% if match.origen or match.folio_ref %}
-                          <br />
-                          <small>
+                      <td class="col-name">
+                        <span class="cell-name">
+                          <span class="row-dot {% if match.score >= 80 %}is-alto{% elif match.score >= 60 %}is-medio{% else %}is-bajo{% endif %}"></span>
+                          {{ match.name }}
+                        </span>
+                        {% if match.rfc or match.origen or match.folio_ref %}
+                          <span class="cell-sub">
+                            {% if match.rfc %}RFC: {{ match.rfc }}{% endif %}
+                            {% if match.rfc and match.origen %} &middot; {% endif %}
                             {% if match.origen %}{{ match.origen }}{% endif %}
-                            {% if match.origen and match.folio_ref %} | {% endif %}
-                            {% if match.folio_ref %}Folio: {{ match.folio_ref }}{% endif %}
-                          </small>
+                            {% if match.folio_ref %} &middot; Folio: {{ match.folio_ref }}{% endif %}
+                          </span>
                         {% endif %}
                       </td>
-                      <td>
-                        <span class="score-badge {% if match.score >= 80 %}score-alto{% elif match.score >= 60 %}score-medio{% else %}score-bajo{% endif %}">
-                          {{ match.score }}%
-                        </span>
+                      <td class="col-score">
+                        <span class="score {% if match.score >= 80 %}score-alto{% elif match.score >= 60 %}score-medio{% else %}score-bajo{% endif %}">{{ match.score }}%</span>
                       </td>
-                      <td>{{ match.explanation }}</td>
+                      <td class="cell-motivo">{{ match.explanation }}</td>
                       <td>
-                        <small>
-                          Ortografía: {{ match.details.typo_similarity }}% |
-                          Pronunciación: {{ match.details.phonetic }}% |
-                          Orden: {{ match.details.token_sort }}%
-                        </small>
+                        <div class="metrics">
+                          <span class="metric sm" title="Ortograf&iacute;a: parecido entre las letras.">
+                            <span class="metric-lbl">Ortog.</span>
+                            <span class="metric-val">{{ match.details.typo_similarity }}%</span>
+                          </span>
+                          <span class="metric sm" title="Pronunciaci&oacute;n: parecido fon&eacute;tico.">
+                            <span class="metric-lbl">Pron.</span>
+                            <span class="metric-val">{{ match.details.phonetic }}%</span>
+                          </span>
+                          <span class="metric sm" title="Orden: coincidencia sin importar el orden de los nombres.">
+                            <span class="metric-lbl">Orden</span>
+                            <span class="metric-val">{{ match.details.token_sort }}%</span>
+                          </span>
+                        </div>
                       </td>
                     </tr>
                   {% endfor %}
                 </tbody>
               </table>
             </div>
-          {% else %}
+          </div>
+        {% else %}
+          <div class="persona-body">
             <p class="sin-coincidencias">Sin coincidencias por encima del {{ min_score }}%.</p>
-          {% endif %}
-        </section>
-      {% endfor %}
-
-    </main>
-  </body>
-</html>
+          </div>
+        {% endif %}
+      </details>
+    {% endfor %}
+  </div>
+{% endblock %}

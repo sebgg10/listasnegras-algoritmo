@@ -1,0 +1,80 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Buscador PLD-FT{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'coincidencias/styles.css' %}" />
+  </head>
+  <body>
+    {% with current=request.resolver_match.url_name %}
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" hidden />
+
+    <div class="layout">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <span class="brand-mark">P</span>
+          <span class="brand-text">
+            <span class="brand-name">Buscador&nbsp;PLD&#8209;FT</span>
+            <span class="brand-sub">Cumplimiento &middot; CNBV</span>
+          </span>
+        </div>
+
+        <p class="nav-label">Principal</p>
+        <nav class="nav">
+          <a href="{% url 'search_names' %}" class="nav-item {% if current == 'search_names' %}is-active{% endif %}">
+            <span class="nav-tile">B</span><span>B&uacute;squeda difusa</span>
+          </a>
+          <a href="{% url 'lista_oficios' %}" class="nav-item {% if current == 'lista_oficios' %}is-active{% endif %}">
+            <span class="nav-tile">O</span><span>Oficios CNBV</span>
+          </a>
+          {% if current == 'comparar_oficio' %}
+          <span class="nav-item is-active is-static">
+            <span class="nav-tile">C</span><span>Comparar oficio</span>
+          </span>
+          {% endif %}
+        </nav>
+
+        <div class="nav-spacer"></div>
+
+        <div class="user-box">
+          <span class="user-avatar">AR</span>
+          <span class="user-text">
+            <span class="user-name">Analista de riesgo</span>
+            <span class="user-sub">Sesi&oacute;n interna</span>
+          </span>
+        </div>
+        <p class="version">v2.0 &middot; uso interno</p>
+      </aside>
+
+      <label for="nav-toggle" class="nav-scrim" aria-hidden="true"></label>
+
+      <div class="main-col">
+        <header class="topbar">
+          <label for="nav-toggle" class="hamburger" aria-label="Men&uacute;">
+            <span></span><span></span><span></span>
+          </label>
+          <span class="topbar-brand"><span class="brand-mark sm">P</span> Buscador PLD&#8209;FT</span>
+        </header>
+
+        <main class="content">
+          {% block content %}{% endblock %}
+        </main>
+
+        <footer class="appfoot">
+          <span>Buscador PLD&#8209;FT v2.0 &middot; Cumplimiento PLD-FT</span>
+          <span>CNBV / Unidad de Inteligencia Financiera &middot; Uso interno</span>
+        </footer>
+      </div>
+    </div>
+    {% endwith %}
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

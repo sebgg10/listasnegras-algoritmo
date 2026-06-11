@@ -1,91 +1,157 @@
-{% load static %}
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Buscador de Nombres Difuso</title>
-    <link rel="stylesheet" href="{% static 'coincidencias/styles.css' %}" />
-  </head>
-  <body>
-    <main class="page-wrap">
-      <section class="card">
-        <nav class="nav-links" style="margin-bottom:0.8rem;">
-          <a href="{% url 'lista_oficios' %}" class="btn-secondary">Oficios CNBV →</a>
-        </nav>
-        <form method="get" class="search-form">
-          <div class="field field-large">
-            <label for="id_query">Nombre a buscar</label>
-            {{ form.query }}
-          </div>
-          <div class="field">
-            <label for="id_min_score">Coincidencia mínima (%)</label>
-            {{ form.min_score }}
-          </div>
-          <div class="field">
-            <label for="id_limit">Máximo de resultados</label>
-            {{ form.limit }}
-          </div>
-          <button type="submit">Buscar coincidencias</button>
-        </form>
-        <p class="hint">
-          Registros disponibles: <strong>{{ total_records }}</strong>
-        </p>
-      </section>
+{% extends "coincidencias/base.html" %}
 
-      {% if query and matches %}
-        <section class="card">
-          <h2>Resultados para "{{ query }}"</h2>
-          <div class="table-wrap">
-            <table>
-              <thead>
+{% block title %}B&uacute;squeda difusa &mdash; Buscador PLD-FT{% endblock %}
+
+{% block content %}
+  <header class="page-head">
+    <p class="eyebrow">B&uacute;squeda difusa</p>
+    <h1>Buscar nombres en la base de clientes</h1>
+    <p class="lead">
+      Coincidencia difusa por ortograf&iacute;a, pronunciaci&oacute;n y orden de los nombres
+      &mdash; tolera errores de captura y variantes.
+    </p>
+  </header>
+
+  <section class="panel search-panel">
+    <form method="get" class="search-form">
+      <div class="field field-search">
+        <label for="id_query">Nombre a buscar</label>
+        <div class="search-field">
+          <span class="magnifier" aria-hidden="true"></span>
+          {{ form.query }}
+        </div>
+      </div>
+      <div class="field">
+        <label for="id_min_score">Coincidencia m&iacute;n. (%)</label>
+        {{ form.min_score }}
+      </div>
+      <div class="field">
+        <label for="id_limit">M&aacute;x. resultados</label>
+        {{ form.limit }}
+      </div>
+      <button type="submit" class="btn-primary">
+        <span class="spinner" aria-hidden="true"></span>
+        <span class="btn-label">Buscar coincidencias</span>
+      </button>
+    </form>
+    <p class="panel-foot">
+      <span class="dot"></span>
+      Registros disponibles para comparar:
+      <strong class="mono">{{ total_records }}</strong>
+    </p>
+  </section>
+
+  {% if query and matches %}
+    <section class="results">
+      <div class="results-head">
+        <div class="results-count">
+          <span class="count-num" data-count="{{ matches|length }}">{{ matches|length }}</span>
+          <span class="count-lbl">coincidencias para <strong>&ldquo;{{ query }}&rdquo;</strong></span>
+        </div>
+        {% include "coincidencias/_legend.html" %}
+      </div>
+
+      <div class="table-card">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="col-name">Nombre encontrado</th>
+                <th class="col-score">Coincidencia</th>
+                <th>Motivo principal</th>
+                <th>M&eacute;tricas de detalle</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for match in matches %}
                 <tr>
-                  <th>Nombre encontrado</th>
-                  <th>Coincidencia</th>
-                  <th>Motivo principal</th>
-                  <th>Detalle</th>
+                  <td class="col-name">
+                    <span class="cell-name">{{ match.name }}</span>
+                    {% if match.rfc or match.origen or match.folio_ref %}
+                      <span class="cell-sub">
+                        {% if match.rfc %}RFC: {{ match.rfc }}{% endif %}
+                        {% if match.rfc and match.origen %} &middot; {% endif %}
+                        {% if match.origen %}{{ match.origen }}{% endif %}
+                        {% if match.folio_ref %} &middot; Folio: {{ match.folio_ref }}{% endif %}
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td class="col-score">
+                    <span class="score {% if match.score >= 80 %}score-alto{% elif match.score >= 60 %}score-medio{% else %}score-bajo{% endif %}">{{ match.score }}%</span>
+                    <span class="score-bar">
+                      <span class="score-bar-fill {% if match.score >= 80 %}is-alto{% elif match.score >= 60 %}is-medio{% else %}is-bajo{% endif %}" style="width: {{ match.score }}%"></span>
+                    </span>
+                  </td>
+                  <td class="cell-motivo">{{ match.explanation }}</td>
+                  <td>
+                    <div class="metrics">
+                      <span class="metric" title="Ortograf&iacute;a: qu&eacute; tan parecidas son las letras (detecta errores de captura, faltantes o cambiadas).">
+                        <span class="metric-lbl">Ortograf&iacute;a</span>
+                        <span class="metric-val">{{ match.details.typo_similarity }}%</span>
+                      </span>
+                      <span class="metric" title="Pronunciaci&oacute;n: qu&eacute; tan parecido suena el nombre (coincidencias fon&eacute;ticas como 'Peres' vs 'P&eacute;rez').">
+                        <span class="metric-lbl">Pronunciaci&oacute;n</span>
+                        <span class="metric-val">{{ match.details.phonetic }}%</span>
+                      </span>
+                      <span class="metric" title="Orden: coincidencia sin importar el orden de nombres y apellidos.">
+                        <span class="metric-lbl">Orden</span>
+                        <span class="metric-val">{{ match.details.token_sort }}%</span>
+                      </span>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {% for match in matches %}
-                  <tr>
-                    <td>
-                      <strong>{{ match.name }}</strong>
-                      {% if match.origen or match.folio_ref %}
-                        <br />
-                        <small>
-                          {% if match.origen %}Origen: {{ match.origen }}{% endif %}
-                          {% if match.origen and match.folio_ref %} | {% endif %}
-                          {% if match.folio_ref %}Folio: {{ match.folio_ref }}{% endif %}
-                        </small>
-                      {% endif %}
-                    </td>
-                    <td><strong>{{ match.score }}%</strong></td>
-                    <td>{{ match.explanation }}</td>
-                    <td>
-                      Ortografía: {{ match.details.typo_similarity }}% |
-                      Pronunciación: {{ match.details.phonetic }}% |
-                      Orden: {{ match.details.token_sort }}%
-                      {% if match.rfc %}
-                        <br />
-                        RFC: {{ match.rfc }}
-                      {% endif %}
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      {% elif query %}
-        <section class="card">
-          <h2>No hubo coincidencias suficientes</h2>
-          <p>
-            No se encontraron resultados arriba del umbral de {{ min_score }}%.
-            Intenta bajar el mínimo.
-          </p>
-        </section>
-      {% endif %}
-    </main>
-  </body>
-</html>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  {% elif query %}
+    <section class="panel empty-state">
+      <div class="empty-icon"><span class="magnifier lg"></span></div>
+      <h2>No hubo coincidencias suficientes</h2>
+      <p>No se encontraron resultados por encima del umbral de {{ min_score }}%. Intenta bajar la coincidencia m&iacute;nima.</p>
+    </section>
+  {% else %}
+    <section class="panel empty-state">
+      <div class="empty-icon"><span class="magnifier lg"></span></div>
+      <h2>Escribe un nombre para comenzar</h2>
+      <p>El buscador encuentra coincidencias aunque el nombre tenga errores de ortograf&iacute;a, est&eacute; abreviado o en otro orden.</p>
+      <div class="empty-tips">
+        <span class="tips-lbl">Prueba:</span>
+        <span class="tip">Jhon Peres</span>
+        <span class="tip">Ma. Fernanda Loez</span>
+        <span class="tip">Constructora Bajio</span>
+      </div>
+    </section>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var form = document.querySelector('.search-form');
+    if (form) {
+      form.addEventListener('submit', function () {
+        var btn = form.querySelector('.btn-primary');
+        if (btn) {
+          btn.classList.add('is-loading');
+          var lbl = btn.querySelector('.btn-label');
+          if (lbl) lbl.textContent = 'Buscando…';
+        }
+      });
+    }
+    var c = document.querySelector('.count-num');
+    if (c) {
+      var target = parseInt(c.getAttribute('data-count'), 10) || 0;
+      var cur = 0, step = Math.max(1, Math.ceil(target / 16));
+      c.textContent = '0';
+      var t = setInterval(function () {
+        cur += step;
+        if (cur >= target) { cur = target; clearInterval(t); }
+        c.textContent = cur;
+      }, 35);
+    }
+  })();
+</script>
+{% endblock %}
