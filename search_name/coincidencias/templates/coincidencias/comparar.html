@@ -1,0 +1,142 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Comparación — Folio {{ oficio.folio }}</title>
+    <link rel="stylesheet" href="{% static 'coincidencias/styles.css' %}" />
+  </head>
+  <body>
+    <main class="page-wrap">
+
+      <!-- Encabezado del oficio -->
+      <section class="card hero">
+        <p class="badge">Oficio CNBV — PLD-FT</p>
+        <h1>Folio {{ oficio.folio }}</h1>
+        <div class="oficio-meta">
+          <span><strong>Número:</strong> {{ oficio.numero_oficio }}</span>
+          <span><strong>Expediente:</strong> {{ oficio.numero_expediente }}</span>
+          <span><strong>Fecha:</strong> {{ oficio.fecha_publicacion }}</span>
+          <span><strong>Plazo:</strong>
+            <span class="badge-plazo {% if oficio.dias_plazo <= 1 %}plazo-urgente{% else %}plazo-normal{% endif %}">
+              {{ oficio.dias_plazo }} día{{ oficio.dias_plazo|pluralize }}
+            </span>
+          </span>
+          <span><strong>Referencia:</strong> {{ oficio.referencia }}</span>
+          <span><strong>Autoridad:</strong> {{ oficio.autoridad_nombre }}</span>
+        </div>
+        <nav class="nav-links" style="margin-top:1rem;">
+          <a href="{% url 'lista_oficios' %}" class="btn-secondary">← Regresar a oficios</a>
+        </nav>
+      </section>
+
+      <!-- Resumen de la comparación -->
+      <section class="card">
+        <div class="resumen-grid">
+          <div class="resumen-item">
+            <span class="resumen-num">{{ total_personas_cnbv }}</span>
+            <span class="resumen-lbl">Personas CNBV</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-num">{{ total_clientes }}</span>
+            <span class="resumen-lbl">Clientes en BD</span>
+          </div>
+          <div class="resumen-item {% if total_alertas > 0 %}resumen-alerta{% endif %}">
+            <span class="resumen-num">{{ total_alertas }}</span>
+            <span class="resumen-lbl">Con coincidencias</span>
+          </div>
+        </div>
+
+        <!-- Control del umbral -->
+        <form method="get" class="umbral-form">
+          <label for="id_min_score">Coincidencia mínima (%)</label>
+          <input
+            type="number"
+            id="id_min_score"
+            name="min_score"
+            min="0"
+            max="100"
+            value="{{ min_score }}"
+            style="width:90px;"
+          />
+          <button type="submit">Recalcular</button>
+        </form>
+      </section>
+
+      <!-- Resultados por persona CNBV -->
+      {% for resultado in resultados %}
+        <section class="card {% if resultado.tiene_coincidencias %}card-alerta{% endif %}">
+          <div class="persona-header">
+            <div>
+              <span class="tipo-badge {% if resultado.persona.tipo_persona == 'Fisica' %}tipo-fisica{% else %}tipo-moral{% endif %}">
+                {{ resultado.persona.tipo_persona }}
+              </span>
+              <strong class="persona-nombre">{{ resultado.persona.search_full_name }}</strong>
+              {% if resultado.persona.rfc %}
+                <small> — RFC: {{ resultado.persona.rfc }}</small>
+              {% endif %}
+            </div>
+            <div class="persona-meta">
+              {% if resultado.persona.caracter %}
+                <span class="caracter-badge">{{ resultado.persona.caracter }}</span>
+              {% endif %}
+              {% if resultado.persona.complementarios %}
+                <small>{{ resultado.persona.complementarios }}</small>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if resultado.tiene_coincidencias %}
+            <div class="table-wrap" style="margin-top:0.75rem;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cliente en BD</th>
+                    <th>Coincidencia</th>
+                    <th>Motivo</th>
+                    <th>Detalle métricas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for match in resultado.matches %}
+                    <tr class="{% if match.score >= 80 %}row-alto{% elif match.score >= 60 %}row-medio{% else %}row-bajo{% endif %}">
+                      <td>
+                        <strong>{{ match.name }}</strong>
+                        {% if match.rfc %}<br /><small>RFC: {{ match.rfc }}</small>{% endif %}
+                        {% if match.origen or match.folio_ref %}
+                          <br />
+                          <small>
+                            {% if match.origen %}{{ match.origen }}{% endif %}
+                            {% if match.origen and match.folio_ref %} | {% endif %}
+                            {% if match.folio_ref %}Folio: {{ match.folio_ref }}{% endif %}
+                          </small>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <span class="score-badge {% if match.score >= 80 %}score-alto{% elif match.score >= 60 %}score-medio{% else %}score-bajo{% endif %}">
+                          {{ match.score }}%
+                        </span>
+                      </td>
+                      <td>{{ match.explanation }}</td>
+                      <td>
+                        <small>
+                          Ortografía: {{ match.details.typo_similarity }}% |
+                          Pronunciación: {{ match.details.phonetic }}% |
+                          Orden: {{ match.details.token_sort }}%
+                        </small>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="sin-coincidencias">Sin coincidencias por encima del {{ min_score }}%.</p>
+          {% endif %}
+        </section>
+      {% endfor %}
+
+    </main>
+  </body>
+</html>

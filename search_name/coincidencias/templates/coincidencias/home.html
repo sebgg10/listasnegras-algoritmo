@@ -1,0 +1,91 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Buscador de Nombres Difuso</title>
+    <link rel="stylesheet" href="{% static 'coincidencias/styles.css' %}" />
+  </head>
+  <body>
+    <main class="page-wrap">
+      <section class="card">
+        <nav class="nav-links" style="margin-bottom:0.8rem;">
+          <a href="{% url 'lista_oficios' %}" class="btn-secondary">Oficios CNBV →</a>
+        </nav>
+        <form method="get" class="search-form">
+          <div class="field field-large">
+            <label for="id_query">Nombre a buscar</label>
+            {{ form.query }}
+          </div>
+          <div class="field">
+            <label for="id_min_score">Coincidencia mínima (%)</label>
+            {{ form.min_score }}
+          </div>
+          <div class="field">
+            <label for="id_limit">Máximo de resultados</label>
+            {{ form.limit }}
+          </div>
+          <button type="submit">Buscar coincidencias</button>
+        </form>
+        <p class="hint">
+          Registros disponibles: <strong>{{ total_records }}</strong>
+        </p>
+      </section>
+
+      {% if query and matches %}
+        <section class="card">
+          <h2>Resultados para "{{ query }}"</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre encontrado</th>
+                  <th>Coincidencia</th>
+                  <th>Motivo principal</th>
+                  <th>Detalle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for match in matches %}
+                  <tr>
+                    <td>
+                      <strong>{{ match.name }}</strong>
+                      {% if match.origen or match.folio_ref %}
+                        <br />
+                        <small>
+                          {% if match.origen %}Origen: {{ match.origen }}{% endif %}
+                          {% if match.origen and match.folio_ref %} | {% endif %}
+                          {% if match.folio_ref %}Folio: {{ match.folio_ref }}{% endif %}
+                        </small>
+                      {% endif %}
+                    </td>
+                    <td><strong>{{ match.score }}%</strong></td>
+                    <td>{{ match.explanation }}</td>
+                    <td>
+                      Ortografía: {{ match.details.typo_similarity }}% |
+                      Pronunciación: {{ match.details.phonetic }}% |
+                      Orden: {{ match.details.token_sort }}%
+                      {% if match.rfc %}
+                        <br />
+                        RFC: {{ match.rfc }}
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      {% elif query %}
+        <section class="card">
+          <h2>No hubo coincidencias suficientes</h2>
+          <p>
+            No se encontraron resultados arriba del umbral de {{ min_score }}%.
+            Intenta bajar el mínimo.
+          </p>
+        </section>
+      {% endif %}
+    </main>
+  </body>
+</html>

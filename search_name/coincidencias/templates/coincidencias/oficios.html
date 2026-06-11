@@ -1,0 +1,87 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Oficios CNBV — Verificación PLD-FT</title>
+    <link rel="stylesheet" href="{% static 'coincidencias/styles.css' %}" />
+  </head>
+  <body>
+    <main class="page-wrap">
+
+      <section class="card hero">
+        <p class="badge">CNBV / PLD-FT</p>
+        <h1>Oficios CNBV importados</h1>
+        <p>
+          Lista de oficios de la Unidad de Inteligencia Financiera cargados en el sistema.
+          Selecciona un oficio para comparar sus personas contra la base de clientes.
+        </p>
+        <nav class="nav-links">
+          <a href="{% url 'search_names' %}" class="btn-secondary">← Búsqueda manual</a>
+        </nav>
+      </section>
+
+      {% if not oficios %}
+        <section class="card">
+          <h2>No hay oficios importados</h2>
+          <p>
+            Ejecuta el siguiente comando para importar los XMLs de la carpeta
+            <code>listasnegras/</code>:
+          </p>
+          <pre class="code-block">python manage.py import_cnbv ../listasnegras/</pre>
+        </section>
+      {% else %}
+        <section class="card">
+          <p class="hint">
+            Total de oficios: <strong>{{ total_oficios }}</strong>
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Folio</th>
+                  <th>Fecha</th>
+                  <th>Referencia</th>
+                  <th>Área</th>
+                  <th>Plazo</th>
+                  <th>Personas</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for oficio in oficios %}
+                  <tr>
+                    <td><strong>{{ oficio.folio }}</strong></td>
+                    <td>{{ oficio.fecha_publicacion }}</td>
+                    <td>
+                      {{ oficio.referencia }}
+                      {% if oficio.referencia1 %}
+                        <br /><small>{{ oficio.referencia1 }}</small>
+                      {% endif %}
+                    </td>
+                    <td>{{ oficio.area_descripcion }}</td>
+                    <td>
+                      <span class="badge-plazo {% if oficio.dias_plazo <= 1 %}plazo-urgente{% else %}plazo-normal{% endif %}">
+                        {{ oficio.dias_plazo }} día{{ oficio.dias_plazo|pluralize }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="count-badge">{{ oficio.personas.count }}</span>
+                    </td>
+                    <td>
+                      <a href="{% url 'comparar_oficio' oficio.folio %}" class="btn-comparar">
+                        Comparar
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      {% endif %}
+
+    </main>
+  </body>
+</html>
