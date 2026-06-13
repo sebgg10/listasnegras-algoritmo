@@ -3,6 +3,30 @@ from django.db import models
 from .matching import build_search_name, clean_name_piece, normalize_name
 
 
+class Abreviacion(models.Model):
+    """Mapeo abreviación → forma completa normalizada (ej. 'hdez' → 'hernandez')."""
+    abreviacion = models.CharField(max_length=20, unique=True, db_index=True)
+    forma_completa = models.CharField(max_length=100, db_index=True)
+    auto_detectada = models.BooleanField(
+        default=False,
+        help_text="Detectada automáticamente al guardar un registro de nombre.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["abreviacion"]
+        verbose_name = "Abreviación"
+        verbose_name_plural = "Abreviaciones"
+
+    def save(self, *args, **kwargs):
+        self.abreviacion = normalize_name(self.abreviacion)
+        self.forma_completa = normalize_name(self.forma_completa)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.abreviacion} → {self.forma_completa}"
+
+
 class Oficio(models.Model):
     folio = models.IntegerField(unique=True, db_index=True)
     numero_oficio = models.CharField(max_length=80, blank=True, default="")
