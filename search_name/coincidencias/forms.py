@@ -32,8 +32,10 @@ class NameSearchForm(forms.Form):
         if not self.is_valid():
             return {"query": "", "min_score": 45, "limit": 20}
 
+        score = self.cleaned_data.get("min_score")
+        limit = self.cleaned_data.get("limit")
         return {
             "query": self.cleaned_data.get("query", "").strip(),
-            "min_score": self.cleaned_data.get("min_score") or 45,
-            "limit": self.cleaned_data.get("limit") or 20,
+            "min_score": 45 if score is None else score,
+            "limit": 20 if limit is None else limit,
         }

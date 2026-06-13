@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import NameRecord, Oficio, PersonaCNBV
+from .models import Abreviacion, NameRecord, Oficio, PersonaCNBV
+
+
+@admin.register(Abreviacion)
+class AbreviacionAdmin(admin.ModelAdmin):
+    list_display = ("abreviacion", "forma_completa", "auto_detectada", "created_at")
+    search_fields = ("abreviacion", "forma_completa")
+    list_filter = ("auto_detectada",)
+    readonly_fields = ("created_at",)
 
 
 @admin.register(NameRecord)
