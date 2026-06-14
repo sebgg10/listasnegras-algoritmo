@@ -197,6 +197,8 @@ body {
 .field label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
 
 .search-form input,
+.cliente-form input[type=text],
+.cliente-form input[type=number],
 .select {
   width: 100%;
   border: 1.5px solid #dce3e4; border-radius: 11px;
@@ -206,13 +208,16 @@ body {
 }
 #id_min_score, #id_limit { font-family: var(--mono); }
 .search-form input:focus,
+.cliente-form input[type=text]:focus,
+.cliente-form input[type=number]:focus,
 .select:focus {
   outline: none; border-color: var(--teal); background: #fff;
   box-shadow: 0 0 0 3px rgba(15, 141, 140, 0.12);
 }
 
 .search-field { position: relative; }
-.search-field #id_query { padding-left: 40px; }
+.search-field #id_query,
+.search-field #cliente-filter { padding-left: 40px; }
 .magnifier {
   position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
   width: 15px; height: 15px; border: 2px solid var(--ink-ghost);
@@ -245,6 +250,14 @@ body {
 }
 .btn-primary.is-loading .spinner { display: inline-block; }
 .btn-primary.is-loading { opacity: 0.92; }
+.btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center; height: 46px;
+  padding: 0 20px; border-radius: 12px; border: 1.5px solid #dce3e4;
+  background: var(--surface-2); color: var(--ink-mut); font-size: 14.5px; font-weight: 600;
+  font-family: inherit; cursor: pointer; text-decoration: none;
+  transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+}
+.btn-ghost:hover { border-color: var(--teal); color: var(--teal); background: #fff; }
 
 .panel-foot {
   display: flex; align-items: center; gap: 8px;
@@ -391,6 +404,76 @@ body {
   cursor: pointer; transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
 }
 .btn-clear-date:hover { border-color: var(--teal); color: var(--teal); background: #fff; }
+
+/* ── Tabla de funados (Revisar cartera) ─────────────────────── */
+.tabla-funados { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tabla-funados thead th {
+  text-align: left; padding: 13px 18px; background: var(--surface-2);
+  color: var(--ink-mut); font-weight: 600; font-size: 12px;
+  text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--line);
+}
+.tabla-funados td { padding: 13px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tabla-funados tbody tr:last-child td { border-bottom: none; }
+.tabla-funados tbody tr:hover { background: var(--surface-2); }
+.tabla-funados .td-name { display: block; color: var(--ink); font-weight: 600; }
+.tabla-funados .td-sub { display: block; color: var(--ink-faint); font-size: 12px; margin-top: 2px; }
+.tabla-funados .col-score { text-align: right; white-space: nowrap; }
+.tabla-funados .link-oficio { color: var(--teal); font-weight: 600; text-decoration: none; }
+.tabla-funados .link-oficio:hover { text-decoration: underline; }
+.tabla-funados tr.row-alto { box-shadow: inset 3px 0 0 var(--danger, #d64545); }
+.tabla-funados tr.row-medio { box-shadow: inset 3px 0 0 #d9a441; }
+.tabla-funados tr.row-bajo { box-shadow: inset 3px 0 0 #9aa7ad; }
+/* ── Selector de clientes (búsqueda difusa) ─────────────────── */
+.cliente-form { display: flex; flex-direction: column; gap: 16px; }
+.badge-cliente {
+  display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--teal); background: rgba(15, 141, 140, 0.12);
+  padding: 2px 7px; border-radius: 6px; vertical-align: middle;
+}
+
+.cliente-options {
+  border: 1.5px solid #dce3e4; border-radius: 11px; background: var(--surface-2);
+  max-height: 240px; overflow-y: auto; padding: 6px;
+}
+.cliente-option {
+  display: flex; align-items: center; gap: 10px; padding: 9px 11px;
+  border-radius: 8px; cursor: pointer; font-size: 14.5px; color: var(--ink);
+  transition: background 120ms ease;
+}
+.cliente-option:hover { background: rgba(15, 141, 140, 0.08); }
+.cliente-option input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--teal); cursor: pointer; flex-shrink: 0; }
+.cliente-option:has(input:checked) { background: rgba(15, 141, 140, 0.12); font-weight: 600; }
+.cliente-option-name { flex: 1; }
+.cliente-empty { text-align: center; color: var(--ink-faint); font-size: 13px; padding: 14px 0; margin: 0; }
+
+.cliente-controls { display: flex; gap: 16px; flex-wrap: wrap; }
+.cliente-controls .field { flex: 1; min-width: 140px; }
+
+.cliente-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.selected-section {
+  border-top: 1px dashed var(--line); padding-top: 14px;
+}
+.selected-head { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); margin: 0 0 10px; }
+.selected-count {
+  display: inline-block; min-width: 20px; text-align: center; font-family: var(--mono);
+  background: var(--teal); color: #fff; border-radius: 999px; padding: 1px 8px; font-size: 12px;
+}
+.selected-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.selected-empty { color: var(--ink-faint); font-size: 13px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 7px; padding: 6px 8px 6px 12px;
+  background: #fff; border: 1.5px solid var(--teal); border-radius: 999px;
+  font-size: 13px; font-weight: 600; color: var(--ink);
+}
+.chip-name { line-height: 1; }
+.chip-x {
+  border: none; background: rgba(15, 141, 140, 0.14); color: var(--teal);
+  width: 18px; height: 18px; border-radius: 50%; font-size: 15px; line-height: 1;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+}
+.chip-x:hover { background: var(--teal); color: #fff; }
+
 .filters-count { font-size: 13px; color: var(--ink-mut); }
 .filters-count strong { color: var(--ink); }
 .no-results { text-align: center; color: var(--ink-faint); font-size: 14px; padding: 30px 0; }

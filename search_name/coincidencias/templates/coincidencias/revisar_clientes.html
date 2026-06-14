@@ -1,0 +1,150 @@
+{% extends "coincidencias/base.html" %}
+
+{% block title %}Revisar cartera &mdash; Buscador PLD-FT{% endblock %}
+
+{% block content %}
+  <header class="page-head">
+    <p class="eyebrow">Listas negras / PLD-FT</p>
+    <h1>Revisar cartera contra la lista negra</h1>
+    <p class="lead">
+      Compara <strong>todos los clientes registrados</strong> contra las personas funadas
+      en los oficios de un rango de fechas (por defecto, los &uacute;ltimos 7 d&iacute;as)
+      y muestra las coincidencias encontradas.
+    </p>
+  </header>
+
+  <section class="panel umbral">
+    <form method="get" class="rango-form">
+      <div class="rango-fechas">
+        <div class="field-group">
+          <label for="id_fecha_desde">Desde</label>
+          <input type="date" id="id_fecha_desde" name="fecha_desde" value="{{ fecha_desde }}" class="input-date" />
+        </div>
+        <span class="rango-sep">&mdash;</span>
+        <div class="field-group">
+          <label for="id_fecha_hasta">Hasta</label>
+          <input type="date" id="id_fecha_hasta" name="fecha_hasta" value="{{ fecha_hasta }}" class="input-date" />
+        </div>
+        <div class="field-group">
+          <label>&nbsp;</label>
+          <span style="display:flex;gap:.4rem;">
+            <button type="button" class="btn-clear-date" style="width:auto;padding:0 .7rem;" onclick="setRango(0)">Hoy</button>
+            <button type="button" class="btn-clear-date" style="width:auto;padding:0 .7rem;" onclick="setRango(7)">&Uacute;ltimos 7 d&iacute;as</button>
+          </span>
+        </div>
+      </div>
+
+      <div class="umbral-main" style="margin-top:1rem;">
+        <div class="umbral-head">
+          <label for="id_min_score">Umbral de coincidencia m&iacute;nima</label>
+          <span class="umbral-val" id="umbral-val">{{ min_score }}%</span>
+        </div>
+        <input
+          type="range" id="id_min_score" name="min_score"
+          min="0" max="100" value="{{ min_score }}"
+          oninput="document.getElementById('umbral-val').textContent = this.value + '%';"
+        />
+        <div class="umbral-scale"><span>0</span><span>50</span><span>100</span></div>
+      </div>
+
+      <div style="display:flex;gap:.75rem;align-items:center;margin-top:1rem;flex-wrap:wrap;">
+        {% include "coincidencias/_legend.html" %}
+        <button type="submit" class="btn-primary">Revisar cartera</button>
+      </div>
+    </form>
+  </section>
+
+  <div class="summary-grid">
+    <div class="summary-tile">
+      <span class="summary-icon ic-db"><span class="ic-square"></span></span>
+      <span class="summary-text">
+        <span class="summary-num">{{ total_clientes }}</span>
+        <span class="summary-lbl">Clientes revisados</span>
+      </span>
+    </div>
+    <div class="summary-tile">
+      <span class="summary-icon ic-people"><span class="ic-circle"></span></span>
+      <span class="summary-text">
+        <span class="summary-num">{{ total_personas_negras }}</span>
+        <span class="summary-lbl">Funados en el rango</span>
+      </span>
+    </div>
+    <div class="summary-tile">
+      <span class="summary-icon ic-db"><span class="ic-square"></span></span>
+      <span class="summary-text">
+        <span class="summary-num">{{ oficios_count }}</span>
+        <span class="summary-lbl">Oficios en el rango</span>
+      </span>
+    </div>
+    <div class="summary-tile {% if total_funados > 0 %}is-alert{% endif %}">
+      <span class="summary-icon ic-alert">!</span>
+      <span class="summary-text">
+        <span class="summary-num">{{ total_funados }}</span>
+        <span class="summary-lbl">Clientes se&ntilde;alados</span>
+      </span>
+    </div>
+  </div>
+
+  {% if not filas %}
+    <section class="panel empty-state">
+      <h2>Sin coincidencias</h2>
+      <p>
+        Ninguno de los {{ total_clientes }} cliente{{ total_clientes|pluralize }} coincide por
+        encima del {{ min_score }}% con las {{ total_personas_negras }} persona{{ total_personas_negras|pluralize }}
+        funada{{ total_personas_negras|pluralize }} en los oficios del {{ fecha_desde }} al {{ fecha_hasta }}.
+      </p>
+    </section>
+  {% else %}
+    <p class="section-hint" style="margin-bottom:.5rem;">
+      {{ total_coincidencias }} coincidencia{{ total_coincidencias|pluralize }} encontrada{{ total_coincidencias|pluralize }}
+      ({{ total_funados }} cliente{{ total_funados|pluralize }} se&ntilde;alado{{ total_funados|pluralize }}).
+    </p>
+
+    <section class="panel" style="padding:0;overflow:hidden;">
+      <table class="tabla-funados">
+        <thead>
+          <tr>
+            <th>Mi cliente</th>
+            <th>Persona funada (coincidencia)</th>
+            <th class="col-score">Coincidencia</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for fila in filas %}
+            <tr class="{% if fila.score >= 80 %}row-alto{% elif fila.score >= 60 %}row-medio{% else %}row-bajo{% endif %}">
+              <td>
+                <span class="td-name">{{ fila.cliente }}</span>
+                {% if fila.cliente_rfc %}<span class="td-sub">RFC: {{ fila.cliente_rfc }}</span>{% endif %}
+              </td>
+              <td>
+                <span class="td-name">{{ fila.persona }}</span>
+                <span class="td-sub">
+                  {% if fila.folio_ref %}
+                    <a href="{% url 'comparar_oficio' fila.folio_ref %}" class="link-oficio">Ver oficio {{ fila.folio_ref }} &rarr;</a>
+                  {% endif %}
+                  {% if fila.persona_rfc %} &middot; RFC: {{ fila.persona_rfc }}{% endif %}
+                </span>
+              </td>
+              <td class="col-score">
+                <span class="score {% if fila.score >= 80 %}score-alto{% elif fila.score >= 60 %}score-medio{% else %}score-bajo{% endif %}">{{ fila.score }}%</span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function setRango(dias) {
+    var hasta = new Date();
+    var desde = new Date();
+    desde.setDate(hasta.getDate() - dias);
+    function fmt(d) { return d.toISOString().slice(0, 10); }
+    document.getElementById('id_fecha_desde').value = fmt(desde);
+    document.getElementById('id_fecha_hasta').value = fmt(hasta);
+  }
+</script>
+{% endblock %}

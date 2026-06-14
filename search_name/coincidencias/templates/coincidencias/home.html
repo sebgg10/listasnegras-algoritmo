@@ -5,124 +5,166 @@
 {% block content %}
   <header class="page-head">
     <p class="eyebrow">B&uacute;squeda difusa</p>
-    <h1>Buscar nombres en la base de clientes</h1>
+    <h1>Verificar clientes contra la lista negra</h1>
     <p class="lead">
-      Coincidencia difusa por ortograf&iacute;a, pronunciaci&oacute;n y orden de los nombres
-      &mdash; tolera errores de captura y variantes.
+      Selecciona uno o varios clientes para comprobar si est&aacute;n <strong>funados</strong>
+      &mdash; es decir, si coinciden con alguien de la lista negra de la CNBV. La coincidencia
+      tolera errores de captura, abreviaciones y orden distinto.
     </p>
   </header>
 
   <section class="panel search-panel">
-    <form method="get" class="search-form">
-      <div class="field field-search">
-        <label for="id_query">Nombre a buscar</label>
+    <form method="get" class="cliente-form">
+      <div class="field field-buscar-cliente">
+        <label for="cliente-filter">Selecciona tus clientes</label>
         <div class="search-field">
           <span class="magnifier" aria-hidden="true"></span>
-          {{ form.query }}
+          <input type="text" id="cliente-filter" placeholder="Filtra la lista por nombre&hellip;" autocomplete="off" />
         </div>
       </div>
-      <div class="field">
-        <label for="id_min_score">Coincidencia m&iacute;n. (%)</label>
-        {{ form.min_score }}
+
+      <div class="cliente-options" id="cliente-options">
+        {% for cliente in clientes_menu %}
+          <label class="cliente-option" data-name="{{ cliente.search_full_name|lower }}">
+            <input type="checkbox" name="clientes" value="{{ cliente.id }}" {% if cliente.id in selected_ids %}checked{% endif %} />
+            <span class="cliente-option-name">{{ cliente.search_full_name }}</span>
+          </label>
+        {% endfor %}
+        <p class="cliente-empty" id="cliente-empty" hidden>Ning&uacute;n cliente coincide con el filtro.</p>
       </div>
-      <div class="field">
-        <label for="id_limit">M&aacute;x. resultados</label>
-        {{ form.limit }}
+
+      <div class="cliente-controls">
+        <div class="field">
+          <label for="id_min_score">Coincidencia m&iacute;n. (%)</label>
+          {{ form.min_score }}
+        </div>
+        <div class="field">
+          <label for="id_limit">M&aacute;x. resultados</label>
+          {{ form.limit }}
+        </div>
       </div>
-      <button type="submit" class="btn-primary">
-        <span class="spinner" aria-hidden="true"></span>
-        <span class="btn-label">Buscar coincidencias</span>
-      </button>
+
+      <div class="selected-section">
+        <p class="selected-head">
+          Clientes seleccionados <span class="selected-count" id="selected-count">0</span>
+        </p>
+        <div class="selected-chips" id="selected-chips">
+          <span class="selected-empty" id="selected-empty">A&uacute;n no has seleccionado clientes.</span>
+        </div>
+      </div>
+
+      <div class="cliente-actions">
+        <button type="submit" class="btn-primary">
+          <span class="spinner" aria-hidden="true"></span>
+          <span class="btn-label">Buscar coincidencias</span>
+        </button>
+        <a href="{% url 'search_names' %}" class="btn-ghost" id="clear-filters">Limpiar todos los filtros</a>
+      </div>
     </form>
     <p class="panel-foot">
       <span class="dot"></span>
-      Registros disponibles para comparar:
+      Personas en la lista negra:
       <strong class="mono">{{ total_records }}</strong>
     </p>
   </section>
 
-  {% if query and matches %}
-    <section class="results">
-      <div class="results-head">
-        <div class="results-count">
-          <span class="count-num" data-count="{{ matches|length }}">{{ matches|length }}</span>
-          <span class="count-lbl">coincidencias para <strong>&ldquo;{{ query }}&rdquo;</strong></span>
-        </div>
-        {% include "coincidencias/_legend.html" %}
-      </div>
+  {% if busqueda_activa %}
+    <div class="results-head" style="margin-bottom:.75rem;">
+      <p class="section-hint">
+        {{ search_groups|length }} b&uacute;squeda{{ search_groups|length|pluralize }} &mdash; haz clic en cada tarjeta para ver el detalle.
+      </p>
+      {% include "coincidencias/_legend.html" %}
+    </div>
 
-      <div class="table-card">
-        <div class="table-scroll">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th class="col-name">Nombre encontrado</th>
-                <th class="col-score">Coincidencia</th>
-                <th>Motivo principal</th>
-                <th>M&eacute;tricas de detalle</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for match in matches %}
-                <tr>
-                  <td class="col-name">
-                    <span class="cell-name">{{ match.name }}</span>
-                    {% if match.rfc or match.origen or match.folio_ref %}
-                      <span class="cell-sub">
-                        {% if match.rfc %}RFC: {{ match.rfc }}{% endif %}
-                        {% if match.rfc and match.origen %} &middot; {% endif %}
-                        {% if match.origen %}{{ match.origen }}{% endif %}
-                        {% if match.folio_ref %} &middot; Folio: {{ match.folio_ref }}{% endif %}
-                      </span>
-                    {% endif %}
-                  </td>
-                  <td class="col-score">
-                    <span class="score {% if match.score >= 80 %}score-alto{% elif match.score >= 60 %}score-medio{% else %}score-bajo{% endif %}">{{ match.score }}%</span>
-                    <span class="score-bar">
-                      <span class="score-bar-fill {% if match.score >= 80 %}is-alto{% elif match.score >= 60 %}is-medio{% else %}is-bajo{% endif %}" style="width: {{ match.score }}%"></span>
-                    </span>
-                  </td>
-                  <td class="cell-motivo">{{ match.explanation }}</td>
-                  <td>
-                    <div class="metrics">
-                      <span class="metric" title="Ortograf&iacute;a: qu&eacute; tan parecidas son las letras (detecta errores de captura, faltantes o cambiadas).">
-                        <span class="metric-lbl">Ortograf&iacute;a</span>
-                        <span class="metric-val">{{ match.details.typo_similarity }}%</span>
-                      </span>
-                      <span class="metric" title="Pronunciaci&oacute;n: qu&eacute; tan parecido suena el nombre (coincidencias fon&eacute;ticas como 'Peres' vs 'P&eacute;rez').">
-                        <span class="metric-lbl">Pronunciaci&oacute;n</span>
-                        <span class="metric-val">{{ match.details.phonetic }}%</span>
-                      </span>
-                      <span class="metric" title="Orden: coincidencia sin importar el orden de nombres y apellidos.">
-                        <span class="metric-lbl">Orden</span>
-                        <span class="metric-val">{{ match.details.token_sort }}%</span>
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-  {% elif query %}
-    <section class="panel empty-state">
-      <div class="empty-icon"><span class="magnifier lg"></span></div>
-      <h2>No hubo coincidencias suficientes</h2>
-      <p>No se encontraron resultados por encima del umbral de {{ min_score }}%. Intenta bajar la coincidencia m&iacute;nima.</p>
-    </section>
+    <div class="persona-list">
+      {% for group in search_groups %}
+        <details class="persona {% if group.best_score >= 80 %}is-alert{% endif %}" {% if search_groups|length == 1 %}open{% endif %}>
+          <summary class="persona-summary">
+            <span class="chev" aria-hidden="true">&#9656;</span>
+            <span class="tipo {% if group.es_cliente %}tipo-fisica{% else %}tipo-moral{% endif %}">
+              {% if group.es_cliente %}Cliente{% else %}Texto{% endif %}
+            </span>
+            <span class="persona-id">
+              <span class="persona-name">{{ group.label }}</span>
+              <span class="persona-sub">
+                {% if group.count %}Funado &mdash; mejor coincidencia: {{ group.best_score }}%{% else %}Sin coincidencias en la lista negra{% endif %}
+              </span>
+            </span>
+            <span class="status {% if group.count %}status-alert{% else %}status-none{% endif %}">
+              {% if group.count %}FUNADO &middot; {{ group.count }} coincidencia{{ group.count|pluralize }}{% else %}Limpio{% endif %}
+            </span>
+          </summary>
+
+          <div class="persona-body">
+            {% if group.matches %}
+              <div class="table-card">
+                <div class="table-scroll">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th class="col-name">Persona en la lista negra</th>
+                        <th class="col-score">Coincidencia</th>
+                        <th>Motivo principal</th>
+                        <th>M&eacute;tricas de detalle</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for match in group.matches %}
+                        <tr>
+                          <td class="col-name">
+                            <span class="cell-name">{{ match.name }}</span>
+                            {% if match.rfc or match.origen or match.folio_ref %}
+                              <span class="cell-sub">
+                                {% if match.rfc %}RFC: {{ match.rfc }}{% endif %}
+                                {% if match.rfc and match.origen %} &middot; {% endif %}
+                                {% if match.origen %}{{ match.origen }}{% endif %}
+                                {% if match.folio_ref %} &middot; Folio: {{ match.folio_ref }}{% endif %}
+                              </span>
+                            {% endif %}
+                          </td>
+                          <td class="col-score">
+                            <span class="score {% if match.score >= 80 %}score-alto{% elif match.score >= 60 %}score-medio{% else %}score-bajo{% endif %}">{{ match.score }}%</span>
+                            <span class="score-bar">
+                              <span class="score-bar-fill {% if match.score >= 80 %}is-alto{% elif match.score >= 60 %}is-medio{% else %}is-bajo{% endif %}" style="width: {{ match.score }}%"></span>
+                            </span>
+                          </td>
+                          <td class="cell-motivo">{{ match.explanation }}</td>
+                          <td>
+                            <div class="metrics">
+                              <span class="metric" title="Ortograf&iacute;a: qu&eacute; tan parecidas son las letras (detecta errores de captura, faltantes o cambiadas).">
+                                <span class="metric-lbl">Ortograf&iacute;a</span>
+                                <span class="metric-val">{{ match.details.typo_similarity }}%</span>
+                              </span>
+                              <span class="metric" title="Pronunciaci&oacute;n: qu&eacute; tan parecido suena el nombre (coincidencias fon&eacute;ticas como 'Peres' vs 'P&eacute;rez').">
+                                <span class="metric-lbl">Pronunciaci&oacute;n</span>
+                                <span class="metric-val">{{ match.details.phonetic }}%</span>
+                              </span>
+                              <span class="metric" title="Orden: coincidencia sin importar el orden de nombres y apellidos.">
+                                <span class="metric-lbl">Orden</span>
+                                <span class="metric-val">{{ match.details.token_sort }}%</span>
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            {% else %}
+              <p class="cell-sub" style="padding:.5rem 0;">
+                Sin coincidencias por encima del {{ min_score }}% para &ldquo;{{ group.label }}&rdquo;.
+              </p>
+            {% endif %}
+          </div>
+        </details>
+      {% endfor %}
+    </div>
   {% else %}
     <section class="panel empty-state">
       <div class="empty-icon"><span class="magnifier lg"></span></div>
-      <h2>Escribe un nombre para comenzar</h2>
-      <p>El buscador encuentra coincidencias aunque el nombre tenga errores de ortograf&iacute;a, est&eacute; abreviado o en otro orden.</p>
-      <div class="empty-tips">
-        <span class="tips-lbl">Prueba:</span>
-        <span class="tip">Jhon Peres</span>
-        <span class="tip">Ma. Fernanda Loez</span>
-        <span class="tip">Constructora Bajio</span>
-      </div>
+      <h2>Selecciona uno o varios clientes</h2>
+      <p>Elige clientes de la lista de arriba y pulsa &laquo;Buscar coincidencias&raquo; para encontrar nombres parecidos en la base, aunque tengan errores de ortograf&iacute;a, abreviaciones u otro orden.</p>
     </section>
   {% endif %}
 {% endblock %}
@@ -130,7 +172,7 @@
 {% block scripts %}
 <script>
   (function () {
-    var form = document.querySelector('.search-form');
+    var form = document.querySelector('.cliente-form');
     if (form) {
       form.addEventListener('submit', function () {
         var btn = form.querySelector('.btn-primary');
@@ -141,8 +183,55 @@
         }
       });
     }
-    var c = document.querySelector('.count-num');
-    if (c) {
+
+    // --- Filtro de la lista de clientes ---
+    var filter = document.getElementById('cliente-filter');
+    var options = Array.prototype.slice.call(document.querySelectorAll('.cliente-option'));
+    var emptyMsg = document.getElementById('cliente-empty');
+    if (filter) {
+      filter.addEventListener('input', function () {
+        var q = filter.value.trim().toLowerCase();
+        var visible = 0;
+        options.forEach(function (opt) {
+          var name = opt.getAttribute('data-name') || '';
+          var show = !q || name.indexOf(q) !== -1;
+          opt.style.display = show ? '' : 'none';
+          if (show) visible++;
+        });
+        if (emptyMsg) emptyMsg.hidden = visible !== 0;
+      });
+    }
+
+    // --- Sección de clientes seleccionados ---
+    var checks = Array.prototype.slice.call(document.querySelectorAll('.cliente-option input[type=checkbox]'));
+    var chipsBox = document.getElementById('selected-chips');
+    var emptySel = document.getElementById('selected-empty');
+    var countEl = document.getElementById('selected-count');
+
+    function renderSelected() {
+      if (!chipsBox) return;
+      Array.prototype.slice.call(chipsBox.querySelectorAll('.chip')).forEach(function (c) { c.remove(); });
+      var selected = checks.filter(function (c) { return c.checked; });
+      if (countEl) countEl.textContent = selected.length;
+      if (emptySel) emptySel.style.display = selected.length ? 'none' : '';
+      selected.forEach(function (c) {
+        var name = c.parentNode.querySelector('.cliente-option-name').textContent.trim();
+        var chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.innerHTML = '<span class="chip-name"></span><button type="button" class="chip-x" title="Quitar">&times;</button>';
+        chip.querySelector('.chip-name').textContent = name;
+        chip.querySelector('.chip-x').addEventListener('click', function () {
+          c.checked = false;
+          renderSelected();
+        });
+        chipsBox.appendChild(chip);
+      });
+    }
+    checks.forEach(function (c) { c.addEventListener('change', renderSelected); });
+    renderSelected();
+
+    // --- Animación de conteo en las tarjetas de resultados ---
+    Array.prototype.forEach.call(document.querySelectorAll('.count-num'), function (c) {
       var target = parseInt(c.getAttribute('data-count'), 10) || 0;
       var cur = 0, step = Math.max(1, Math.ceil(target / 16));
       c.textContent = '0';
@@ -151,7 +240,7 @@
         if (cur >= target) { cur = target; clearInterval(t); }
         c.textContent = cur;
       }, 35);
-    }
+    });
   })();
 </script>
 {% endblock %}
