@@ -21,10 +21,9 @@
   {% else %}
     <div class="filters">
       <div class="filters-group">
-        <span class="filters-lbl">A&ntilde;o</span>
-        <select id="filter-year" class="select">
-          <option value="Todos">Todos</option>
-        </select>
+        <span class="filters-lbl">Fecha</span>
+        <input type="date" id="filter-date" class="select" />
+        <button type="button" id="clear-date" class="btn-clear-date" title="Limpiar fecha">&times;</button>
       </div>
       <div class="filters-group">
         <span class="filters-lbl">&Aacute;rea</span>
@@ -39,7 +38,7 @@
       {% for oficio in oficios %}
         <article
           class="oficio-card {% if oficio.dias_plazo <= 1 %}is-urgent{% endif %}"
-          data-anio="{{ oficio.fecha_publicacion|date:'Y' }}"
+          data-fecha="{{ oficio.fecha_publicacion|date:'Y-m-d' }}"
           data-area="{{ oficio.area_descripcion }}"
         >
           <span class="oficio-accent"></span>
@@ -90,12 +89,13 @@
 {% block scripts %}
 <script>
   (function () {
-    var ySel = document.getElementById('filter-year');
+    var dInput = document.getElementById('filter-date');
+    var clearBtn = document.getElementById('clear-date');
     var aSel = document.getElementById('filter-area');
-    var cards = Array.prototype.slice.call(document.querySelectorAll('[data-anio]'));
+    var cards = Array.prototype.slice.call(document.querySelectorAll('[data-fecha]'));
     var countEl = document.getElementById('oficio-count');
     var noRes = document.getElementById('no-results');
-    if (!ySel || !aSel) return;
+    if (!dInput || !aSel) return;
 
     function fill(sel, values) {
       values.sort().forEach(function (v) {
@@ -105,32 +105,32 @@
         sel.appendChild(o);
       });
     }
-    var years = [], areas = [];
+    var areas = [];
     cards.forEach(function (c) {
-      var y = c.getAttribute('data-anio'), a = c.getAttribute('data-area');
-      if (y && years.indexOf(y) === -1) years.push(y);
+      var a = c.getAttribute('data-area');
       if (a && areas.indexOf(a) === -1) areas.push(a);
-    });
-    years.sort(function (m, n) { return n - m; });
-    years.forEach(function (v) {
-      var o = document.createElement('option'); o.value = v; o.textContent = v; ySel.appendChild(o);
     });
     fill(aSel, areas);
 
     function apply() {
-      var fy = ySel.value, fa = aSel.value, n = 0;
+      var fd = dInput.value, fa = aSel.value, n = 0;
       cards.forEach(function (c) {
-        var okY = fy === 'Todos' || c.getAttribute('data-anio') === fy;
+        var okD = !fd || c.getAttribute('data-fecha') === fd;
         var okA = fa === 'Todas' || c.getAttribute('data-area') === fa;
-        var show = okY && okA;
+        var show = okD && okA;
         c.style.display = show ? '' : 'none';
         if (show) n++;
       });
       if (countEl) countEl.textContent = n;
       if (noRes) noRes.hidden = n !== 0;
     }
-    ySel.addEventListener('change', apply);
+    dInput.addEventListener('change', apply);
+    dInput.addEventListener('input', apply);
     aSel.addEventListener('change', apply);
+    if (clearBtn) clearBtn.addEventListener('click', function () {
+      dInput.value = '';
+      apply();
+    });
   })();
 </script>
 {% endblock %}
