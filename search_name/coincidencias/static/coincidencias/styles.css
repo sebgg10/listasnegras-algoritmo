@@ -385,6 +385,12 @@ body {
 .filters-group { display: flex; align-items: center; gap: 8px; }
 .filters-lbl { font-size: 12px; font-weight: 600; color: var(--ink-faint); }
 .filters .select { width: auto; padding: 8px 11px; font-size: 13px; border-radius: 9px; cursor: pointer; }
+.btn-clear-date {
+  border: 1.5px solid #dce3e4; background: var(--surface-2); color: var(--ink-mut);
+  border-radius: 9px; width: 30px; height: 30px; font-size: 16px; line-height: 1;
+  cursor: pointer; transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+}
+.btn-clear-date:hover { border-color: var(--teal); color: var(--teal); background: #fff; }
 .filters-count { font-size: 13px; color: var(--ink-mut); }
 .filters-count strong { color: var(--ink); }
 .no-results { text-align: center; color: var(--ink-faint); font-size: 14px; padding: 30px 0; }
