@@ -27,7 +27,9 @@
         {% for cliente in clientes_menu %}
           <label class="cliente-option" data-name="{{ cliente.search_full_name|lower }}">
             <input type="checkbox" name="clientes" value="{{ cliente.id }}" {% if cliente.id in selected_ids %}checked{% endif %} />
+            <span class="cliente-avatar">{{ cliente.search_full_name|first|upper }}</span>
             <span class="cliente-option-name">{{ cliente.search_full_name }}</span>
+            <span class="cliente-check" aria-hidden="true"></span>
           </label>
         {% endfor %}
         <p class="cliente-empty" id="cliente-empty" hidden>Ning&uacute;n cliente coincide con el filtro.</p>
