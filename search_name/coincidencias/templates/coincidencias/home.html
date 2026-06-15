@@ -7,7 +7,7 @@
     <p class="eyebrow">B&uacute;squeda difusa</p>
     <h1>Verificar clientes contra la lista negra</h1>
     <p class="lead">
-      Selecciona uno o varios clientes para comprobar si est&aacute;n <strong>funados</strong>
+      Selecciona uno o varios clientes para comprobar si est&aacute;n <strong>alertados</strong>
       &mdash; es decir, si coinciden con alguien de la lista negra de la CNBV. La coincidencia
       tolera errores de captura, abreviaciones y orden distinto.
     </p>
@@ -89,11 +89,11 @@
             <span class="persona-id">
               <span class="persona-name">{{ group.label }}</span>
               <span class="persona-sub">
-                {% if group.count %}Funado &mdash; mejor coincidencia: {{ group.best_score }}%{% else %}Sin coincidencias en la lista negra{% endif %}
+                {% if group.count %}Alertado &mdash; mejor coincidencia: {{ group.best_score }}%{% else %}Sin coincidencias en la lista negra{% endif %}
               </span>
             </span>
             <span class="status {% if group.count %}status-alert{% else %}status-none{% endif %}">
-              {% if group.count %}FUNADO &middot; {{ group.count }} coincidencia{{ group.count|pluralize }}{% else %}Limpio{% endif %}
+              {% if group.count %}ALERTADO &middot; {{ group.count }} coincidencia{{ group.count|pluralize }}{% else %}Limpio{% endif %}
             </span>
           </summary>
 

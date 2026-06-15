@@ -405,24 +405,24 @@ body {
 }
 .btn-clear-date:hover { border-color: var(--teal); color: var(--teal); background: #fff; }
 
-/* ── Tabla de funados (Revisar cartera) ─────────────────────── */
-.tabla-funados { width: 100%; border-collapse: collapse; font-size: 14px; }
-.tabla-funados thead th {
+/* ── Tabla de alertados (Revisar cartera) ─────────────────────── */
+.tabla-alertados { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tabla-alertados thead th {
   text-align: left; padding: 13px 18px; background: var(--surface-2);
   color: var(--ink-mut); font-weight: 600; font-size: 12px;
   text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--line);
 }
-.tabla-funados td { padding: 13px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
-.tabla-funados tbody tr:last-child td { border-bottom: none; }
-.tabla-funados tbody tr:hover { background: var(--surface-2); }
-.tabla-funados .td-name { display: block; color: var(--ink); font-weight: 600; }
-.tabla-funados .td-sub { display: block; color: var(--ink-faint); font-size: 12px; margin-top: 2px; }
-.tabla-funados .col-score { text-align: right; white-space: nowrap; }
-.tabla-funados .link-oficio { color: var(--teal); font-weight: 600; text-decoration: none; }
-.tabla-funados .link-oficio:hover { text-decoration: underline; }
-.tabla-funados tr.row-alto { box-shadow: inset 3px 0 0 var(--danger, #d64545); }
-.tabla-funados tr.row-medio { box-shadow: inset 3px 0 0 #d9a441; }
-.tabla-funados tr.row-bajo { box-shadow: inset 3px 0 0 #9aa7ad; }
+.tabla-alertados td { padding: 13px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tabla-alertados tbody tr:last-child td { border-bottom: none; }
+.tabla-alertados tbody tr:hover { background: var(--surface-2); }
+.tabla-alertados .td-name { display: block; color: var(--ink); font-weight: 600; }
+.tabla-alertados .td-sub { display: block; color: var(--ink-faint); font-size: 12px; margin-top: 2px; }
+.tabla-alertados .col-score { text-align: right; white-space: nowrap; }
+.tabla-alertados .link-oficio { color: var(--teal); font-weight: 600; text-decoration: none; }
+.tabla-alertados .link-oficio:hover { text-decoration: underline; }
+.tabla-alertados tr.row-alto { box-shadow: inset 3px 0 0 var(--danger, #d64545); }
+.tabla-alertados tr.row-medio { box-shadow: inset 3px 0 0 #d9a441; }
+.tabla-alertados tr.row-bajo { box-shadow: inset 3px 0 0 #9aa7ad; }
 /* ── Selector de clientes (búsqueda difusa) ─────────────────── */
 .cliente-form { display: flex; flex-direction: column; gap: 16px; }
 .badge-cliente {

@@ -45,7 +45,7 @@ def search_names(request):
     clientes_by_id = {c["id"]: c for c in clientes_menu}
 
     # Candidatos = LISTA NEGRA (personas señaladas en los oficios de la CNBV).
-    # Aquí buscamos si los clientes están "funados".
+    # Aquí verificamos si los clientes están alertados en la lista negra.
     personas_negras = PersonaCNBV.objects.select_related("oficio")
     candidatos_negros = [
         {
@@ -170,8 +170,8 @@ def revisar_clientes(request):
     # Clientes reales = NameRecord que NO provienen de los oficios.
     clientes = NameRecord.objects.exclude(origen__in=ORIGENES_OFICIO)
 
-    filas = []  # una fila por cada (cliente, persona funada)
-    clientes_funados = set()
+    filas = []
+    clientes_alertados = set()
     for cliente in clientes:
         if not candidatos_negros:
             break
@@ -182,7 +182,7 @@ def revisar_clientes(request):
             limit=10,
         )
         if matches:
-            clientes_funados.add(cliente.id)
+            clientes_alertados.add(cliente.id)
         for match in matches:
             filas.append(
                 {
@@ -208,7 +208,7 @@ def revisar_clientes(request):
             "fecha_hasta": fecha_hasta.isoformat(),
             "min_score": min_score,
             "total_clientes": clientes.count(),
-            "total_funados": len(clientes_funados),
+            "total_alertados": len(clientes_alertados),
             "total_coincidencias": len(filas),
             "total_personas_negras": len(candidatos_negros),
             "oficios_count": len(oficios_en_rango),

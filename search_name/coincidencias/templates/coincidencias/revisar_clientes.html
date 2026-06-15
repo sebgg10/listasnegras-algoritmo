@@ -66,7 +66,7 @@
       <span class="summary-icon ic-people"><span class="ic-circle"></span></span>
       <span class="summary-text">
         <span class="summary-num">{{ total_personas_negras }}</span>
-        <span class="summary-lbl">Funados en el rango</span>
+        <span class="summary-lbl">Alertados en el rango</span>
       </span>
     </div>
     <div class="summary-tile">
@@ -76,10 +76,10 @@
         <span class="summary-lbl">Oficios en el rango</span>
       </span>
     </div>
-    <div class="summary-tile {% if total_funados > 0 %}is-alert{% endif %}">
+    <div class="summary-tile {% if total_alertados > 0 %}is-alert{% endif %}">
       <span class="summary-icon ic-alert">!</span>
       <span class="summary-text">
-        <span class="summary-num">{{ total_funados }}</span>
+        <span class="summary-num">{{ total_alertados }}</span>
         <span class="summary-lbl">Clientes se&ntilde;alados</span>
       </span>
     </div>
@@ -91,21 +91,21 @@
       <p>
         Ninguno de los {{ total_clientes }} cliente{{ total_clientes|pluralize }} coincide por
         encima del {{ min_score }}% con las {{ total_personas_negras }} persona{{ total_personas_negras|pluralize }}
-        funada{{ total_personas_negras|pluralize }} en los oficios del {{ fecha_desde }} al {{ fecha_hasta }}.
+        alertada{{ total_personas_negras|pluralize }} en los oficios del {{ fecha_desde }} al {{ fecha_hasta }}.
       </p>
     </section>
   {% else %}
     <p class="section-hint" style="margin-bottom:.5rem;">
       {{ total_coincidencias }} coincidencia{{ total_coincidencias|pluralize }} encontrada{{ total_coincidencias|pluralize }}
-      ({{ total_funados }} cliente{{ total_funados|pluralize }} se&ntilde;alado{{ total_funados|pluralize }}).
+      ({{ total_alertados }} cliente{{ total_alertados|pluralize }} se&ntilde;alado{{ total_alertados|pluralize }}).
     </p>
 
     <section class="panel" style="padding:0;overflow:hidden;">
-      <table class="tabla-funados">
+      <table class="tabla-alertados">
         <thead>
           <tr>
             <th>Mi cliente</th>
-            <th>Persona funada (coincidencia)</th>
+            <th>Persona alertada (coincidencia)</th>
             <th class="col-score">Coincidencia</th>
           </tr>
         </thead>
